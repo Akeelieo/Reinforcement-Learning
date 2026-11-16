@@ -39,6 +39,3 @@ pip install -r requirements.txt
 
 Then open the notebook in either folder. Each folder's README explains how to run it.
 
-## Acknowledgements
-
-The environment and algorithm code builds on starter code supplied by the ST962 *Introduction to Deep Reinforcement Learning* module at the University of Warwick. The experiments, analysis, notebooks and write-ups are my own.
