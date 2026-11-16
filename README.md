@@ -1,64 +1,44 @@
-# Deep RL on CartPole: DQN vs REINFORCE
+# Reinforcement Learning: From Tables to Neural Networks
 
-The tabular methods in the main folder store one value per square, which only works when there are few states. CartPole has a continuous state (cart position and velocity, pole angle and angular velocity), so a table is no longer possible. This part uses **neural networks** to approximate the values or the policy instead.
+Reinforcement learning (RL) is the branch of machine learning where an **agent** learns good behaviour by trial and error, guided only by rewards. There's no dataset of correct answers: the agent tries things, sees what pays off, and gradually works out a good strategy.
 
-## The task
+This repository has two connected parts. The first uses **tabular** methods, which store a value for every state in a table. The second moves to **deep RL**, where the table is replaced by a neural network so the agent can handle problems with too many states for a table.
 
-A pole is balanced on a cart that moves left and right. Each step the agent pushes the cart left or right and gets +1 reward while the pole stays upright. An episode ends when the pole falls, the cart leaves the track, or 500 steps pass, so the maximum return is 500. The task counts as **solved** at an average return of 475.
+## Part 1: Tabular RL on a GridWorld → [`tabular/`](tabular/README.md)
 
-## The two methods
+An agent learns to cross a slippery 5×5 grid to reach a goal while avoiding a trap. Three methods are compared:
 
-- **DQN (Deep Q-Network)** is a value-based method: Q-learning with a neural network in place of the Q-table. It uses an **experience replay buffer**, training on random past transitions rather than only the latest one, and a **target network**, a frozen copy of the Q-network updated every 100 steps that provides stable learning targets. It explores with ε-greedy, with ε decaying from 1.0 to 0.01.
-- **REINFORCE with baseline** is a policy-based method: a network outputs action probabilities directly and is pushed towards actions that led to higher-than-expected returns. A second network estimates the state value V(s), which is used as a baseline to reduce variance.
+- **Value iteration:** computes the optimal policy from a full model of the world (the baseline).
+- **Q-learning (off-policy):** learns from experience alone and finds the bold, optimal route.
+- **SARSA (on-policy):** learns from experience while accounting for its own exploration, so it plays more cautiously.
 
-Both use the same network shape (2 hidden layers of 128 units, ReLU, Adam, learning rate 0.001) and γ = 0.99.
+Q-learning matched the optimal policy in 19 of 23 states, compared with 16 for SARSA.
 
-## Results
+## Part 2: Deep RL on CartPole → [`deep_rl/`](deep_rl/README.md)
 
-5 seeds, 1,000 episodes each, ±1 standard deviation shading, 20-episode moving average.
+An agent learns to balance a pole on a moving cart. The state is continuous, so a table is no longer possible:
 
-![DQN vs REINFORCE](figures/dqn_vs_reinforce.png)
+- **DQN:** Q-learning with a neural network, experience replay and a target network.
+- **REINFORCE with baseline:** a policy-gradient method that learns the policy directly.
 
-| Method | Final mean return |
-|---|---:|
-| REINFORCE (with baseline) | 474.7 |
-| DQN (with target network) | 355.7 |
+Over 5 seeds, REINFORCE reached a mean return of 474.7 (solved = 475) against 355.7 for DQN. An ablation showed that removing DQN's target network cut its return to 122.8.
 
-**REINFORCE learned much faster**, passing 400 by about episode 300 and finishing just below the solved threshold, but its results varied more between seeds. **DQN learned more slowly but more consistently.** It has to fill its replay buffer and decay ε before learning picks up, and its curve was still rising at 1,000 episodes.
+## Repository structure
 
-### Ablation: removing DQN's target network
-
-![DQN target network ablation](figures/dqn_target_network_ablation.png)
-
-| Variant | Final mean return |
-|---|---:|
-| DQN with target network | 355.7 |
-| DQN without target network | 122.8 |
-
-Without the target network, the learning target `r + γ max Q(s′, a′)` is computed from the same network that is being updated, so it shifts after every gradient step. This is an example of the **deadly triad**: off-policy learning, bootstrapping and function approximation combined can be unstable. Freezing the target for 100 steps gives the network a fixed target to learn towards.
-
-## Files
-
-| File | What it does |
-|---|---|
-| `dqn_starter.py` | DQN agent, replay buffer, training loop |
-| `policy_gradient_starter.py` | REINFORCE (with/without baseline) and one-step A2C |
-| `deep_rl_compare.py` | Command-line script comparing the methods |
-| `cartpole_figures.ipynb` | Runs the experiments, caches results and makes the figures above |
-
-The three `.py` files are starter code supplied by the ST962 *Introduction to Deep Reinforcement Learning* module (University of Warwick), used unchanged. The notebook, experiment design, ablation and analysis are my own.
-
-## Running it
-
-```bash
-pip install -r ../requirements.txt
-jupyter notebook cartpole_figures.ipynb
+```
+├── tabular/     GridWorld environment, value iteration, Q-learning, SARSA
+├── deep_rl/     DQN and REINFORCE on CartPole-v1, plus the ablation study
+└── requirements.txt
 ```
 
-Training takes a while on a CPU (3 configurations × 5 seeds × 1,000 episodes). Results are saved to `results/cartpole_returns.npz`, so re-running the notebook afterwards only redraws the plots. Exact numbers can differ slightly between machines and library versions.
-
-Command-line alternative:
+## Getting started
 
 ```bash
-python deep_rl_compare.py --dqn-ablation
+pip install -r requirements.txt
 ```
+
+Then open the notebook in either folder. Each folder's README explains how to run it.
+
+## Acknowledgements
+
+The environment and algorithm code builds on starter code supplied by the ST962 *Introduction to Deep Reinforcement Learning* module at the University of Warwick. The experiments, analysis, notebooks and write-ups are my own.
